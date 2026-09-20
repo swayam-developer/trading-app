@@ -149,7 +149,6 @@ app.use("/auth", authRouter);
 app.use("/stocks", authenticateSocketUser, stockRouter);
 
 // Middleware
-app.use(cors());
 app.use(notFoundMiddleware);
 app.use(errorHandlerMiddleware);
 

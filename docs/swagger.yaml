@@ -32,8 +32,12 @@ info:
 
 
 servers:
+  - url: /
+    description: Current server (auto-detect localhost or production)
   - url: http://localhost:3000
-    description: Development server
+    description: Development server (localhost:3000)
+  - url: https://trading-app-yfln.onrender.com
+    description: Render deployment
   - url: https://api.tradevault.com
     description: Production server
 

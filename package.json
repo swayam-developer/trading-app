@@ -15,7 +15,9 @@
   "dependencies": {
     "bcryptjs": "^3.0.3",
     "buffer-from": "^1.1.2",
+    "cors": "^2.8.5",
     "dotenv": "^17.4.2",
+    "express": "^4.21.2",
     "express-async-errors": "^3.1.1",
     "google-auth-library": "^10.9.0",
     "http-status-codes": "^2.3.0",
