@@ -11,25 +11,12 @@ const generateStockData = async (symbol) => {
     throw new NotFoundError(`Stock with symbol ${symbol} not found`);
   }
   const now = new Date();
-  const minChange = 0.02;
-  const maxChange = 0.02;
-  const trendChange = 0.005;
-  const currentPrice = stock.currentPrice;
+  const basePrice = stock.lastDayTradedPrice || 100;
+  const changePercentage = (Math.random() - 0.49) * 0.008;
 
-  const trendType = Math.random();
-  let trendModifier = 0;
-
-  if (trendType < 0.33) {
-    trendModifier = 0;
-  } else if (trendType < 0.66) {
-    trendModifier = trendChange;
-  } else {
-    trendModifier = -trendChange;
-  }
-  const changePercentage =
-    Math.random() * (maxChange - minChange) + minChange + trendModifier;
-
-  const close = roundToTwoDecimals(currentPrice * (1 + changePercentage));
+  let close = roundToTwoDecimals(currentPrice * (1 + changePercentage));
+  if (close > basePrice * 1.12) close = roundToTwoDecimals(basePrice * 1.10);
+  if (close < basePrice * 0.88) close = roundToTwoDecimals(basePrice * 0.90);
 
   const patternType = Math.random();
   let high, low;
