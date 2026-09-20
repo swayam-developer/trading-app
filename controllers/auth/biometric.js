@@ -1,6 +1,7 @@
 import jwt from "jsonwebtoken";
 import { StatusCodes } from "http-status-codes";
 import NodeRSA from "node-rsa";
+import crypto from "crypto";
 import { BadRequestError, UnauthenticatedError } from "../../errors/index.js";
 import User from "../../models/User.js";
 
@@ -77,16 +78,33 @@ const verifyBiometrics = async (req, res) => {
 };
 
 async function verifySignature(signature, payload, publicKey) {
-  const publicKeyBuffer = Buffer.from(publicKey, "base64");
-  const key = new NodeRSA();
-  const signedData = key.importKey(publicKeyBuffer, "public-der");
-  const signatureVerified = signedData.verify(
-    Buffer.from(payload),
-    signature,
-    "utf-8",
-    "base64",
-  );
+  try {
+    const publicKeyBuffer = Buffer.from(publicKey, "base64");
+    const key = new NodeRSA();
+    key.setOptions({ signingScheme: "pkcs1-sha256" });
+    const signedData = key.importKey(publicKeyBuffer, "public-der");
+    const signatureVerified = signedData.verify(
+      Buffer.from(String(payload)),
+      signature,
+      "utf-8",
+      "base64",
+    );
+    if (signatureVerified) return true;
+  } catch (error) {
+    console.warn("NodeRSA verification warning:", error.message);
+  }
 
-  return signatureVerified;
+  try {
+    const publicKeyBuffer = Buffer.from(publicKey, "base64");
+    const verifier = crypto.createVerify("RSA-SHA256");
+    verifier.update(String(payload));
+    return verifier.verify(
+      crypto.createPublicKey({ key: publicKeyBuffer, format: "der", type: "spki" }),
+      Buffer.from(signature, "base64")
+    );
+  } catch (error) {
+    console.warn("crypto.verify error:", error.message);
+    return false;
+  }
 }
 export { uploadBiometrics, verifyBiometrics };
