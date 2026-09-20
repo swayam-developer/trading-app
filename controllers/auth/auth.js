@@ -89,6 +89,7 @@ const login = async (req, res) => {
       phone_exist,
       login_pin_exist,
     },
+    tokens: { access_token, refresh_token },
     token: { access_token, refresh_token },
   });
 };
