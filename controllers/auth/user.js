@@ -163,20 +163,22 @@ const getProfile = async (req, res) => {
   const decoded = jwt.verify(accessToken, process.env.JWT_SECRET);
   const userId = decoded.userId;
 
-  const user = await User.findById(userId).select("-password -biometricKey");
+  const user = await User.findById(userId).select("-password");
   if (!user) {
     throw new NotFoundError(`No user with id:${userId}`);
   }
 
-  let pinExists = false;
-  let phoneExists = false;
-  if (user.login_pin) pinExists = true;
-  if (user.phone_number) phoneExists = true;
+  const pinExists = !!user.login_pin;
+  const phoneExists = !!user.phone_number;
+  const biometricExists = !!user.biometricKey;
 
   res.status(StatusCodes.OK).json({
     userId: user.id,
     email: user.email,
+    name: user.name || "",
     phone_exist: phoneExists,
+    login_pin_exist: pinExists,
+    biometric_exist: biometricExists,
     balance: (user.balance || 0).toFixed(2),
   });
 };
