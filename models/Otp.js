@@ -25,7 +25,9 @@ const otpSchema = new mongoose.Schema({
 otpSchema.pre("save", async function () {
   if (this.isNew) {
     const salt = await bcrypt.genSalt(10);
-    await sendVerificationMail(this.email, this.otp, this.otp_type);
+    // SMTP commented out: show OTP directly in app for dev/testing
+    // await sendVerificationMail(this.email, this.otp, this.otp_type);
+    console.log(`[TEST OTP] Generated OTP for ${this.email} (${this.otp_type}): ${this.otp}`);
     this.otp = await bcrypt.hash(this.otp, salt);
   }
 });

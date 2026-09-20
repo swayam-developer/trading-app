@@ -12,12 +12,13 @@ const checkEmail = async (req, res) => {
 
   let isExist = true;
   let user = await User.findOne({ email });
+  let otp = null;
 
   if (!user) {
-    const otp = await generateOtp();
+    otp = await generateOtp();
     await OTP.create({ email, otp, otp_type: "email" });
     isExist = false;
   }
-  res.status(StatusCodes.OK).json({ isExist });
+  res.status(StatusCodes.OK).json({ isExist, otp });
 };
-export {checkEmail};
+export { checkEmail };
