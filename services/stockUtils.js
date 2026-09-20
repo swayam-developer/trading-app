@@ -12,6 +12,7 @@ const generateStockData = async (symbol) => {
   }
   const now = new Date();
   const basePrice = stock.lastDayTradedPrice || 100;
+  const currentPrice = stock.currentPrice || basePrice;
   const changePercentage = (Math.random() - 0.49) * 0.008;
 
   let close = roundToTwoDecimals(currentPrice * (1 + changePercentage));
