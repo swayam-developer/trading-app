@@ -23,13 +23,12 @@ export const mailSender = async (email, otp, otp_type) => {
 
   try {
     let transporter = nodemailer.createTransport({
-      host: process.env.MAIL_HOST,
-      port: process.env.MAIL_PORT,
-      secure: false,
+      service: "gmail",
       auth: {
         user: process.env.MAIL_USER,
         pass: process.env.MAIL_PASS ? process.env.MAIL_PASS.replace(/\s+/g, "") : "",
       },
+      connectionTimeout: 10000,
     });
     let result = await transporter.sendMail({
       from: process.env.MAIL_FROM,
