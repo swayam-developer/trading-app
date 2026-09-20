@@ -8,7 +8,7 @@ const orderSchema = new mongoose.Schema({
   },
   stock: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "stock",
+    ref: "Stock",
     required: true,
   },
   quantity: {
@@ -35,6 +35,6 @@ const orderSchema = new mongoose.Schema({
       return parseFloat(value.toFixed(2));
     },
   },
-});
-const Order = new mongoose.model("Order", orderSchema);
+}, { timestamps: true });
+const Order = mongoose.model("Order", orderSchema);
 export default Order;
