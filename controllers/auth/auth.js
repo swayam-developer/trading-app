@@ -6,9 +6,13 @@ import {
   UnauthenticatedError,
 } from "../../errors/index.js";
 import jwt from "jsonwebtoken";
+import {
+  sendWelcomeNotification,
+  sendLoginNotification,
+} from "../../services/fcmService.js";
 
 const register = async (req, res) => {
-  const { email, password, register_token } = req.body;
+  const { email, password, register_token, fcmToken } = req.body;
   if (!email || !password || !register_token) {
     throw new BadRequestError("Please provide all values");
   }
@@ -21,9 +25,21 @@ const register = async (req, res) => {
     if (payload.email != email) {
       throw new BadRequestError("Invalid register token");
     }
-    const newUser = await User.create({ email, password });
+    const newUser = await User.create({
+      email,
+      password,
+      fcmToken: fcmToken || null,
+    });
     const access_token = newUser.createAccessToken();
     const refresh_token = newUser.createRefreshToken();
+
+    // Trigger welcome push notification in background
+    if (fcmToken) {
+      sendWelcomeNotification(fcmToken, newUser.name || newUser.email).catch(
+        (err) => console.error("[FCM Register Error]", err.message)
+      );
+    }
+
     res.status(StatusCodes.CREATED).json({
       user: { email: newUser.email, userId: newUser._id },
       tokens: { access_token, refresh_token },
@@ -38,7 +54,7 @@ const register = async (req, res) => {
 };
 
 const login = async (req, res) => {
-  const { email, password } = req.body;
+  const { email, password, fcmToken } = req.body;
   if (!email || !password) {
     throw new BadRequestError("Please Provide all Values");
   }
@@ -68,6 +84,21 @@ const login = async (req, res) => {
     }
     throw new UnauthenticatedError(message);
   }
+
+  // Update user FCM token if provided
+  if (fcmToken && user.fcmToken !== fcmToken) {
+    user.fcmToken = fcmToken;
+    await user.save();
+  }
+
+  // Trigger login security alert push notification
+  const tokenToNotify = fcmToken || user.fcmToken;
+  if (tokenToNotify) {
+    sendLoginNotification(tokenToNotify, user.name || user.email).catch(
+      (err) => console.error("[FCM Login Error]", err.message)
+    );
+  }
+
   const access_token = user.createAccessToken();
   const refresh_token = user.createRefreshToken();
 

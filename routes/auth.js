@@ -14,6 +14,7 @@ import {
   setLoginPinFirst,
   updateProfile,
   verifyPin,
+  updateFcmToken,
 } from "../controllers/auth/user.js";
 import authenticateUser from "../middleware/authentication.js";
 import {
@@ -31,6 +32,7 @@ router.post("/check-email", checkEmail);
 router.post("/oauth", signInWithOauth);
 router.post("/verify-otp", verifyOtp);
 router.post("/send-otp", sendOtp);
+router.post("/fcm-token", authenticateUser, updateFcmToken);
 router
   .route("/profile")
   .get(authenticateUser, getProfile)

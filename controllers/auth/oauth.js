@@ -4,6 +4,7 @@ import { BadRequestError, UnauthenticatedError } from "../../errors/index.js";
 import { OAuth2Client } from "google-auth-library";
 import jwt from "jsonwebtoken";
 import jwksClient from "jwks-rsa";
+import { sendLoginNotification } from "../../services/fcmService.js";
 
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
@@ -25,8 +26,8 @@ async function getKey(kid) {
 }
 
 const signInWithOauth = async (req, res) => {
-  const { id_token, provider } = req.body;
-  if (!id_token || !provider || !("google", "apple").includes(provider)) {
+  const { id_token, provider, fcmToken } = req.body;
+  if (!id_token || !provider || !["google", "apple"].includes(provider)) {
     throw new BadRequestError("Invalid request");
   }
 
@@ -47,25 +48,36 @@ const signInWithOauth = async (req, res) => {
       const payload = ticket.getPayload();
       email = payload.email;
     }
+    const updateData = { email_verified: true };
+    if (fcmToken) {
+      updateData.fcmToken = fcmToken;
+    }
+
     user = await User.findOneAndUpdate(
       { email },
-      { email_verified: true },
+      updateData,
       { new: true, upsert: true },
     );
 
     const accessToken = user.createAccessToken();
-    const refreshToken = user.createRefreshTOken();
+    const refreshToken = user.createRefreshToken();
+
+    if (fcmToken || user.fcmToken) {
+      sendLoginNotification(fcmToken || user.fcmToken, user.name || user.email).catch(
+        (err) => console.error("[FCM OAuth Error]", err.message)
+      );
+    }
 
     let phone_exist = false;
     let login_pin_exist = false;
 
-    if (user.phone) phone_exist = true;
+    if (user.phone_number || user.phone) phone_exist = true;
     if (user.login_pin) login_pin_exist = true;
     res.status(StatusCodes.OK).json({
       user: {
         email: user.email,
         name: user.name,
-        userId: user.id,
+        userId: user._id || user.id,
         phone_exist,
         login_pin_exist,
       },
@@ -76,4 +88,4 @@ const signInWithOauth = async (req, res) => {
   }
 };
 
-export {signInWithOauth};
+export { signInWithOauth };

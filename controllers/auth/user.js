@@ -183,4 +183,17 @@ const getProfile = async (req, res) => {
   });
 };
 
-export { updateProfile, setLoginPinFirst, verifyPin, getProfile };
+const updateFcmToken = async (req, res) => {
+  const { fcmToken } = req.body;
+  if (!fcmToken) {
+    throw new BadRequestError("fcmToken is required");
+  }
+  const accessToken = req.headers.authorization.split(" ")[1];
+  const decoded = jwt.verify(accessToken, process.env.JWT_SECRET);
+  const userId = decoded.userId;
+
+  await User.findByIdAndUpdate(userId, { fcmToken });
+  res.status(StatusCodes.OK).json({ success: true, message: "FCM token updated successfully" });
+};
+
+export { updateProfile, setLoginPinFirst, verifyPin, getProfile, updateFcmToken };
