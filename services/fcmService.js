@@ -4,6 +4,67 @@ import fs from "fs";
 const fb = admin?.default || admin;
 let isFirebaseInitialized = false;
 
+function parseServiceAccount(raw) {
+  if (!raw || typeof raw !== "string") return null;
+  let str = raw.trim();
+
+  // 1. Check if it is a file path
+  if (fs.existsSync(str)) {
+    try {
+      const fileContent = fs.readFileSync(str, "utf-8");
+      return JSON.parse(fileContent);
+    } catch (err) {
+      console.error("[FCM] Error reading service account file:", err.message);
+      return null;
+    }
+  }
+
+  // 2. Check if it is base64 encoded
+  if (!str.startsWith("{") && !str.startsWith('"') && !str.startsWith("'")) {
+    try {
+      const decoded = Buffer.from(str, "base64").toString("utf-8");
+      if (decoded.trim().startsWith("{")) {
+        str = decoded.trim();
+      }
+    } catch {}
+  }
+
+  // 3. Strip wrapping quotes if accidentally added in UI
+  if (
+    (str.startsWith('"') && str.endsWith('"')) ||
+    (str.startsWith("'") && str.endsWith("'"))
+  ) {
+    str = str.slice(1, -1).trim();
+  }
+
+  // 4. Parse JSON
+  let parsed = null;
+  try {
+    parsed = JSON.parse(str);
+  } catch {
+    try {
+      // Handle escaped double quotes and escaped backslashes
+      const unescaped = str
+        .replace(/\\"/g, '"')
+        .replace(/\\\\n/g, "\n")
+        .replace(/\\n/g, "\n");
+      parsed = JSON.parse(unescaped);
+    } catch (err) {
+      console.warn("[FCM] JSON parse error on FIREBASE_SERVICE_ACCOUNT:", err.message);
+    }
+  }
+
+  if (parsed && typeof parsed === "object") {
+    // Ensure private_key has real newlines
+    if (parsed.private_key && typeof parsed.private_key === "string") {
+      parsed.private_key = parsed.private_key.replace(/\\n/g, "\n");
+    }
+    return parsed;
+  }
+
+  return null;
+}
+
 function initFirebase() {
   if (fb?.apps?.length > 0) {
     isFirebaseInitialized = true;
@@ -13,19 +74,12 @@ function initFirebase() {
   try {
     let credential = null;
 
-    // Check if service account JSON path or string is provided in env
     if (process.env.FIREBASE_SERVICE_ACCOUNT) {
-      if (fs.existsSync(process.env.FIREBASE_SERVICE_ACCOUNT)) {
-        const fileContent = fs.readFileSync(process.env.FIREBASE_SERVICE_ACCOUNT, "utf-8");
-        credential = fb.credential.cert(JSON.parse(fileContent));
+      const parsedServiceAccount = parseServiceAccount(process.env.FIREBASE_SERVICE_ACCOUNT);
+      if (parsedServiceAccount) {
+        credential = fb.credential.cert(parsedServiceAccount);
       } else {
-        // Try parsing directly as JSON string
-        try {
-          const parsed = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
-          credential = fb.credential.cert(parsed);
-        } catch {
-          console.warn("[FCM] FIREBASE_SERVICE_ACCOUNT env is not a valid JSON string or file path.");
-        }
+        console.warn("[FCM] FIREBASE_SERVICE_ACCOUNT env is not a valid JSON string, base64 string, or file path.");
       }
     } else if (process.env.GOOGLE_APPLICATION_CREDENTIALS && fs.existsSync(process.env.GOOGLE_APPLICATION_CREDENTIALS)) {
       credential = fb.credential.applicationDefault();
