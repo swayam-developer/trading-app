@@ -1,7 +1,7 @@
-import admin from "firebase-admin";
+import { initializeApp, cert, getApps, applicationDefault } from "firebase-admin/app";
+import { getMessaging } from "firebase-admin/messaging";
 import fs from "fs";
 
-const fb = admin?.default || admin;
 let isFirebaseInitialized = false;
 
 function parseServiceAccount(raw) {
@@ -66,9 +66,9 @@ function parseServiceAccount(raw) {
 }
 
 function initFirebase() {
-  if (fb?.apps?.length > 0) {
+  if (getApps().length > 0) {
     isFirebaseInitialized = true;
-    return fb.app();
+    return;
   }
 
   try {
@@ -77,16 +77,16 @@ function initFirebase() {
     if (process.env.FIREBASE_SERVICE_ACCOUNT) {
       const parsedServiceAccount = parseServiceAccount(process.env.FIREBASE_SERVICE_ACCOUNT);
       if (parsedServiceAccount) {
-        credential = fb.credential.cert(parsedServiceAccount);
+        credential = cert(parsedServiceAccount);
       } else {
         console.warn("[FCM] FIREBASE_SERVICE_ACCOUNT env is not a valid JSON string, base64 string, or file path.");
       }
     } else if (process.env.GOOGLE_APPLICATION_CREDENTIALS && fs.existsSync(process.env.GOOGLE_APPLICATION_CREDENTIALS)) {
-      credential = fb.credential.applicationDefault();
+      credential = applicationDefault();
     }
 
-    if (credential && fb) {
-      fb.initializeApp({
+    if (credential) {
+      initializeApp({
         credential,
         projectId: process.env.FIREBASE_PROJECT_ID || "trading-app-7e76d",
       });
@@ -113,7 +113,7 @@ export async function sendPushNotification(fcmToken, { title, body, data = {} })
     return { success: false, reason: "No FCM token provided" };
   }
 
-  if (!isFirebaseInitialized || !fb) {
+  if (!isFirebaseInitialized) {
     console.log(`[FCM SIMULATED] Notification to token: ${fcmToken.slice(0, 12)}... Title: "${title}", Body: "${body}"`);
     return { success: true, simulated: true };
   }
@@ -139,7 +139,7 @@ export async function sendPushNotification(fcmToken, { title, body, data = {} })
       },
     };
 
-    const response = await fb.messaging().send(message);
+    const response = await getMessaging().send(message);
     console.log("[FCM] Successfully sent push notification:", response);
     return { success: true, messageId: response };
   } catch (error) {
