@@ -1,9 +1,11 @@
+import express from "express";
 import {
   registerStock,
   getAllStocks,
   getStockBySymbol,
   getMarketStatus,
 } from "../controllers/stock/stock.js";
+
 import {
   buyStock,
   getAllHoldings,
