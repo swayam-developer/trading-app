@@ -5,6 +5,7 @@ import Holding from "../models/Holding.js";
 import Order from "../models/Order.js";
 import { generateStockData, store10Min } from "./stockUtils.js";
 import { calculateMarketStatus } from "../controllers/stock/stock.js";
+import { sendPushNotification } from "./fcmService.js";
 import cron from "node-cron";
 
 const isTradingHour = () => {
@@ -66,6 +67,20 @@ const executePendingAMOOrders = async () => {
           order.price = stock.currentPrice;
           await order.save();
           console.log(`[AMO Engine] Executed BUY AMO order ${order._id} for ${order.quantity} shares of ${stock.symbol}`);
+
+          // Notify user via FCM push notification
+          const user = await User.findById(order.user);
+          if (user?.fcmToken) {
+            sendPushNotification(user.fcmToken, {
+              title: `AMO Executed: Bought ${stock.symbol} 🟢`,
+              body: `Your After-Market Order of ${order.quantity} share${order.quantity > 1 ? 's' : ''} of ${stock.symbol} was filled at market open ($${stock.currentPrice.toFixed(2)}).`,
+              data: {
+                type: "ORDER_EXECUTED",
+                orderId: String(order._id),
+                symbol: stock.symbol,
+              },
+            }).catch((err) => console.error("[AMO FCM Error]", err.message));
+          }
         } else if (order.type === "sell") {
           const holding = await Holding.findOne({
             user: order.user,
@@ -86,6 +101,19 @@ const executePendingAMOOrders = async () => {
               user.balance += sellRevenue;
               await user.save();
               order.remainingBalance = user.balance;
+
+              // Notify user via FCM push notification
+              if (user.fcmToken) {
+                sendPushNotification(user.fcmToken, {
+                  title: `AMO Executed: Sold ${stock.symbol} 🔴`,
+                  body: `Your After-Market Order of ${order.quantity} share${order.quantity > 1 ? 's' : ''} of ${stock.symbol} was filled at market open. $${sellRevenue.toFixed(2)} has been credited to your balance.`,
+                  data: {
+                    type: "ORDER_EXECUTED",
+                    orderId: String(order._id),
+                    symbol: stock.symbol,
+                  },
+                }).catch((err) => console.error("[AMO FCM Error]", err.message));
+              }
             }
 
             order.status = "EXECUTED";
