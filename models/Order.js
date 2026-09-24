@@ -35,6 +35,18 @@ const orderSchema = new mongoose.Schema({
       return parseFloat(value.toFixed(2));
     },
   },
+  status: {
+    type: String,
+    enum: ["EXECUTED", "PENDING_AMO", "CANCELLED"],
+    default: "EXECUTED",
+  },
+  isAMO: {
+    type: Boolean,
+    default: false,
+  },
+  executedAt: {
+    type: Date,
+  },
 }, { timestamps: true });
 const Order = mongoose.model("Order", orderSchema);
 export default Order;

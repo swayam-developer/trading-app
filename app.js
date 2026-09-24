@@ -20,6 +20,7 @@ import errorHandlerMiddleware from "./middleware/error-handler.js";
 import authenticateSocketUser from "./middleware/socketAuth.js";
 import {
   scheduleDayReset,
+  scheduleAMORunner,
   update10MinCandle,
   generateRandomDataEvery5Second,
 } from "./services/cronJob.js";
@@ -225,6 +226,7 @@ const connectWithRetry = async () => {
 
     // Initialize cron jobs once MongoDB is connected
     scheduleDayReset();
+    scheduleAMORunner();
     generateRandomDataEvery5Second();
     update10MinCandle();
   } catch (error) {
