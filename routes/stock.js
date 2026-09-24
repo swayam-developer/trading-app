@@ -1,8 +1,8 @@
-import express from "express";
 import {
   registerStock,
   getAllStocks,
   getStockBySymbol,
+  getMarketStatus,
 } from "../controllers/stock/stock.js";
 import {
   buyStock,
@@ -12,6 +12,7 @@ import {
 import { getOrder } from "../controllers/stock/order.js";
 
 const router = express.Router();
+router.get("/market-status", getMarketStatus);
 router.get("/stock", getStockBySymbol);
 router.post("/register", registerStock);
 router.get("", getAllStocks);
@@ -21,3 +22,4 @@ router.get("/order", getOrder);
 router.get("/holding", getAllHoldings);
 
 export default router;
+
