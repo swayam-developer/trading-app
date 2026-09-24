@@ -26,28 +26,15 @@ import {
 import Stock from "./models/Stock.js";
 import socketHandshake from "./middleware/socketHandshake.js";
 import { getFirebaseStatus } from "./services/fcmService.js";
+import { calculateMarketStatus } from "./controllers/stock/stock.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 dotenv.config();
 
-const holidays = ["2026-05-18", "2026-05-31"];
-
 const isTradingHour = () => {
-  const now = new Date();
-  const dayOfWeek = now.getDay();
-  const isWeekDay = dayOfWeek > 0 && dayOfWeek < 6;
-
-  const isTradingTime =
-    (now.getHours() === 9 && now.getMinutes() >= 30) ||
-    (now.getHours() > 9 && now.getMinutes() < 15) ||
-    (now.getHours() === 15 && now.getMinutes() <= 30);
-
-  const today = new Date().toISOString().slice(0, 10);
-  const isTradingHour = isWeekDay && isTradingTime && !holidays.includes(today);
-
-  return true;
+  return calculateMarketStatus(new Date()).isOpen;
 };
 
 // Express App Initialization
@@ -71,6 +58,13 @@ io.use(socketHandshake);
 
 io.on("connection", (socket) => {
   console.log("New Client Connected", socket.id);
+
+  // Send immediate market status and holiday calendar on connect
+  socket.emit("marketStatus", calculateMarketStatus(new Date()));
+
+  socket.on("getMarketStatus", () => {
+    socket.emit("marketStatus", calculateMarketStatus(new Date()));
+  });
 
   socket.on("SubscribeToStocks", async (stockSymbol) => {
     console.log(`Client ${socket.id} subscribed to stock: ${stockSymbol}`);
