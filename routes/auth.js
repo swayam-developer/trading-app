@@ -16,6 +16,12 @@ import {
   verifyPin,
   updateFcmToken,
 } from "../controllers/auth/user.js";
+import {
+  forgotPassword,
+  resetPassword,
+  forgotPin,
+  resetPin,
+} from "../controllers/auth/passwordReset.js";
 import authenticateUser from "../middleware/authentication.js";
 import {
   uploadBiometrics,
@@ -33,6 +39,15 @@ router.post("/oauth", signInWithOauth);
 router.post("/verify-otp", verifyOtp);
 router.post("/send-otp", sendOtp);
 router.post("/fcm-token", authenticateUser, updateFcmToken);
+
+// Dedicated Password Reset (Forgot Password) APIs
+router.post("/forgot-password", forgotPassword);
+router.post("/reset-password", resetPassword);
+
+// Dedicated MPIN Reset APIs
+router.post("/forgot-pin", forgotPin);
+router.post("/reset-pin", resetPin);
+
 router
   .route("/profile")
   .get(authenticateUser, getProfile)
