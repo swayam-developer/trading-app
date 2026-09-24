@@ -173,3 +173,14 @@ export async function sendLoginNotification(fcmToken, userName = "Trader") {
     },
   });
 }
+
+/**
+ * Get Firebase Admin initialization status
+ */
+export function getFirebaseStatus() {
+  return {
+    initialized: isFirebaseInitialized,
+    status: isFirebaseInitialized ? "initialized" : "not_configured",
+  };
+}
+

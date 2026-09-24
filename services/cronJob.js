@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import Stock from "../models/Stock.js";
 import { generateStockData, store10Min } from "./stockUtils.js";
 import cron from "node-cron";
@@ -25,47 +26,65 @@ const isNewTradeDay = () => {
   return isWeekDay && !holidays.includes(today);
 };
 
+const isDBConnected = () => mongoose.connection.readyState === 1;
+
 const scheduleDayReset = () => {
   cron.schedule("15 9 * * 1-5", async () => {
+    if (!isDBConnected()) return;
     if (isNewTradeDay()) {
-      await Stock.updateMany({}, [
-        {
-          $set: {
-            dayTimeSeries: [],
-            tenMinTimeSeries: [],
-            lastDayTradedPrice: "$currentPrice",
+      try {
+        await Stock.updateMany({}, [
+          {
+            $set: {
+              dayTimeSeries: [],
+              tenMinTimeSeries: [],
+              lastDayTradedPrice: "$currentPrice",
+            },
           },
-        },
-        {
-          $set: { __v: 0 },
-        },
-      ]);
-      console.log("Day reset completed at 9:15 AM");
+          {
+            $set: { __v: 0 },
+          },
+        ]);
+        console.log("Day reset completed at 9:15 AM");
+      } catch (err) {
+        console.error("Error in scheduleDayReset:", err.message);
+      }
     }
   });
 };
 
 const update10MinCandle = () => {
   cron.schedule("*/10 * * * *", async () => {
+    if (!isDBConnected()) return;
     if (isTradingHour()) {
-      const stock = await Stock.find();
-      stock.forEach(async (s) => {
-        await store10Min(s.symbol);
-      });
+      try {
+        const stock = await Stock.find();
+        for (const s of stock) {
+          await store10Min(s.symbol);
+        }
+      } catch (err) {
+        console.error("Error in update10MinCandle:", err.message);
+      }
     }
   });
 };
 
 const generateRandomDataEvery5Second = () => {
   cron.schedule("*/5 * * * * *", async () => {
+    if (!isDBConnected()) return;
     if (!isTradingHour()) {
-      const stock = await Stock.find();
-      stock.forEach(async (s) => {
-        await generateStockData(s.symbol);
-      });
+      try {
+        const stock = await Stock.find();
+        for (const s of stock) {
+          await generateStockData(s.symbol);
+        }
+      } catch (err) {
+        console.error("Error in generateRandomDataEvery5Second:", err.message);
+      }
     }
   });
 };
+
 
 export {
   scheduleDayReset,

@@ -9,6 +9,7 @@ import { Server } from "socket.io";
 import swaggerUI from "swagger-ui-express";
 import YAML from "yamljs";
 import cors from "cors";
+import mongoose from "mongoose";
 import connectDB from "./config/connect.js";
 import authRouter from "./routes/auth.js";
 import stockRouter from "./routes/stock.js";
@@ -24,15 +25,12 @@ import {
 } from "./services/cronJob.js";
 import Stock from "./models/Stock.js";
 import socketHandshake from "./middleware/socketHandshake.js";
+import { getFirebaseStatus } from "./services/fcmService.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 dotenv.config();
-
-scheduleDayReset();
-generateRandomDataEvery5Second();
-update10MinCandle();
 
 const holidays = ["2026-05-18", "2026-05-31"];
 
@@ -52,20 +50,23 @@ const isTradingHour = () => {
   return true;
 };
 
+// Express App Initialization
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-const httpServer = createServer();
+// Attach Socket.IO to the Express HTTP Server (Unified single-port for Render)
+const httpServer = createServer(app);
 
 const io = new Server(httpServer, {
   cors: {
-    origin: process.env.WEBSERVER_URI || "http://localhost:3001",
+    origin: process.env.WEBSERVER_URI || "*",
     methods: ["GET", "POST"],
-    allowedHeaders: ["access_token"],
+    allowedHeaders: ["access_token", "authorization", "content-type"],
     credentials: true,
   },
 });
+
 io.use(socketHandshake);
 
 io.on("connection", (socket) => {
@@ -75,6 +76,7 @@ io.on("connection", (socket) => {
     console.log(`Client ${socket.id} subscribed to stock: ${stockSymbol}`);
     const sendUpdates = async () => {
       try {
+        if (mongoose.connection.readyState !== 1) return;
         const stock = await Stock.findOne({ symbol: stockSymbol });
         if (!stock) {
           console.error(`Stock with symbol ${stockSymbol} not found.`);
@@ -106,6 +108,7 @@ io.on("connection", (socket) => {
     );
     const sendUpdates = async () => {
       try {
+        if (mongoose.connection.readyState !== 1) return;
         for (const symbol of stockSymbols) {
           const stock = await Stock.findOne({ symbol: symbol });
           if (!stock) {
@@ -138,16 +141,62 @@ io.on("connection", (socket) => {
   });
 });
 
-app.get("/", (req, res) => {
-  res.send('<h1>Trading API</h1><a href="/api-docs">Document</a>');
+// ==========================================
+// HEALTH CHECK ENDPOINTS (GET & HEAD)
+// ==========================================
+
+// Fast, granular health check endpoint for UptimeRobot / Render
+app.get("/health", (req, res) => {
+  const mongoStates = ["disconnected", "connected", "connecting", "disconnecting"];
+  const mongoStateNum = mongoose.connection.readyState;
+  const mongoStatus = mongoStates[mongoStateNum] || "unknown";
+  const firebaseStatus = getFirebaseStatus();
+
+  res.status(200).json({
+    status: mongoStateNum === 1 ? "ok" : "degraded",
+    service: "trading-app-server",
+    uptime: Math.round(process.uptime()),
+    timestamp: new Date().toISOString(),
+    checks: {
+      process: "alive",
+      http: "responding",
+      mongodb: {
+        status: mongoStatus,
+        readyState: mongoStateNum,
+      },
+      firebase: firebaseStatus,
+      websocket: {
+        status: "ready",
+        connectedClients: io.engine ? io.engine.clientsCount : 0,
+      },
+    },
+  });
 });
 
-// swagger api docs
+app.head("/health", (req, res) => {
+  res.status(200).end();
+});
 
-const swaggerDocument = YAML.load(join(__dirname, "./docs/swagger.yaml"));
-app.use("/api-docs", swaggerUI.serve, swaggerUI.setup(swaggerDocument));
+// Root routes (GET & HEAD)
+app.head("/", (req, res) => {
+  res.status(200).end();
+});
 
-// routes
+app.get("/", (req, res) => {
+  res.status(200).send(
+    '<h1>Trading API</h1><p>Status: Running</p><p><a href="/api-docs">API Documentation</a> | <a href="/health">Health Check</a></p>',
+  );
+});
+
+// Swagger API docs
+try {
+  const swaggerDocument = YAML.load(join(__dirname, "./docs/swagger.yaml"));
+  app.use("/api-docs", swaggerUI.serve, swaggerUI.setup(swaggerDocument));
+} catch (err) {
+  console.warn("Could not load swagger.yaml:", err.message);
+}
+
+// Routes
 app.use("/auth", authRouter);
 app.use("/stocks", authenticateSocketUser, stockRouter);
 
@@ -155,33 +204,42 @@ app.use("/stocks", authenticateSocketUser, stockRouter);
 app.use(notFoundMiddleware);
 app.use(errorHandlerMiddleware);
 
-// start server
+// ==========================================
+// SERVER STARTUP (Non-blocking Cold Start)
+// ==========================================
 
-const start = async () => {
-  try {
-    const dbUri = process.env.MONGODB_URI;
-    await connectDB(dbUri);
-    console.log("mongodb is connected");
-    const PORT = process.env.PORT || 3000;
-    const SOCKET_PORT = process.env.SOCKET_PORT || 4000;
+const PORT = process.env.PORT || 3000;
 
-    httpServer.listen(SOCKET_PORT, () => {
-      console.log(
-        `Websocket server is running and listening on PORT ${SOCKET_PORT}`,
-      );
-    });
+// 1. Immediately bind and listen to HTTP/WebSocket port
+httpServer.listen(PORT, () => {
+  console.log(`Server and WebSocket listening on port ${PORT}...`);
+});
 
-    app.listen(PORT, () =>
-      console.log(`Server is listening on port ${PORT}...`),
+// 2. Connect to MongoDB in the background without blocking server listening
+const connectWithRetry = async () => {
+  const dbUri = process.env.MONGODB_URI || process.env.MONGO_URI;
+  if (!dbUri) {
+    console.error(
+      "Warning: Neither MONGODB_URI nor MONGO_URI is set. Database operations will fail.",
     );
+    return;
+  }
+
+  try {
+    await connectDB(dbUri);
+    console.log("MongoDB is connected successfully");
+
+    // Initialize cron jobs once MongoDB is connected
+    scheduleDayReset();
+    generateRandomDataEvery5Second();
+    update10MinCandle();
   } catch (error) {
     console.error("Failed to connect to MongoDB:", error.message);
-    if (!process.env.MONGO_URI && !process.env.MONGODB_URI) {
-      console.error(
-        "Tip: No MONGO_URI set in .env. Ensure local MongoDB service is running or set MONGO_URI in server/.env",
-      );
-    }
+    console.log("Retrying MongoDB connection in 5 seconds...");
+    setTimeout(connectWithRetry, 5000);
   }
 };
 
-start();
+connectWithRetry();
+
+export { app, httpServer, io };
