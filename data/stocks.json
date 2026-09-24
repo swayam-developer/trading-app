@@ -2,7 +2,7 @@
   {
     "symbol": "AAPL",
     "companyName": "Apple Inc.",
-    "iconUrl": "https://logo.clearbit.com/apple.com",
+    "iconUrl": "https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=https://apple.com&size=128",
     "lastDayTradedPrice": "175.43",
     "currentPrice": 175.43,
     "dayTimeSeries": [],
@@ -11,7 +11,7 @@
   {
     "symbol": "MSFT",
     "companyName": "Microsoft Corporation",
-    "iconUrl": "https://logo.clearbit.com/microsoft.com",
+    "iconUrl": "https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=https://microsoft.com&size=128",
     "lastDayTradedPrice": "338.11",
     "currentPrice": 338.11,
     "dayTimeSeries": [],
@@ -20,7 +20,7 @@
   {
     "symbol": "GOOGL",
     "companyName": "Alphabet Inc. (Google)",
-    "iconUrl": "https://logo.clearbit.com/google.com",
+    "iconUrl": "https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=https://google.com&size=128",
     "lastDayTradedPrice": "142.56",
     "currentPrice": 142.56,
     "dayTimeSeries": [],
@@ -29,7 +29,7 @@
   {
     "symbol": "AMZN",
     "companyName": "Amazon.com Inc.",
-    "iconUrl": "https://logo.clearbit.com/amazon.com",
+    "iconUrl": "https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=https://amazon.com&size=128",
     "lastDayTradedPrice": "145.24",
     "currentPrice": 145.24,
     "dayTimeSeries": [],
@@ -38,7 +38,7 @@
   {
     "symbol": "TSLA",
     "companyName": "Tesla Inc.",
-    "iconUrl": "https://logo.clearbit.com/tesla.com",
+    "iconUrl": "https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=https://tesla.com&size=128",
     "lastDayTradedPrice": "248.50",
     "currentPrice": 248.50,
     "dayTimeSeries": [],
@@ -47,7 +47,7 @@
   {
     "symbol": "META",
     "companyName": "Meta Platforms Inc.",
-    "iconUrl": "https://logo.clearbit.com/meta.com",
+    "iconUrl": "https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=https://meta.com&size=128",
     "lastDayTradedPrice": "334.87",
     "currentPrice": 334.87,
     "dayTimeSeries": [],
@@ -56,7 +56,7 @@
   {
     "symbol": "NVDA",
     "companyName": "NVIDIA Corporation",
-    "iconUrl": "https://logo.clearbit.com/nvidia.com",
+    "iconUrl": "https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=https://nvidia.com&size=128",
     "lastDayTradedPrice": "485.09",
     "currentPrice": 485.09,
     "dayTimeSeries": [],
@@ -65,7 +65,7 @@
   {
     "symbol": "NFLX",
     "companyName": "Netflix Inc.",
-    "iconUrl": "https://logo.clearbit.com/netflix.com",
+    "iconUrl": "https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=https://netflix.com&size=128",
     "lastDayTradedPrice": "492.19",
     "currentPrice": 492.19,
     "dayTimeSeries": [],
@@ -74,7 +74,7 @@
   {
     "symbol": "JPM",
     "companyName": "JPMorgan Chase & Co.",
-    "iconUrl": "https://logo.clearbit.com/jpmorganchase.com",
+    "iconUrl": "https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=https://jpmorganchase.com&size=128",
     "lastDayTradedPrice": "172.28",
     "currentPrice": 172.28,
     "dayTimeSeries": [],
@@ -83,7 +83,7 @@
   {
     "symbol": "JNJ",
     "companyName": "Johnson & Johnson",
-    "iconUrl": "https://logo.clearbit.com/jnj.com",
+    "iconUrl": "https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=https://jnj.com&size=128",
     "lastDayTradedPrice": "162.45",
     "currentPrice": 162.45,
     "dayTimeSeries": [],
@@ -92,7 +92,7 @@
   {
     "symbol": "V",
     "companyName": "Visa Inc.",
-    "iconUrl": "https://logo.clearbit.com/visa.com",
+    "iconUrl": "https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=https://visa.com&size=128",
     "lastDayTradedPrice": "264.85",
     "currentPrice": 264.85,
     "dayTimeSeries": [],
@@ -101,7 +101,7 @@
   {
     "symbol": "WMT",
     "companyName": "Walmart Inc.",
-    "iconUrl": "https://logo.clearbit.com/walmart.com",
+    "iconUrl": "https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=https://walmart.com&size=128",
     "lastDayTradedPrice": "67.56",
     "currentPrice": 67.56,
     "dayTimeSeries": [],
@@ -110,7 +110,7 @@
   {
     "symbol": "PG",
     "companyName": "Procter & Gamble Co.",
-    "iconUrl": "https://logo.clearbit.com/pg.com",
+    "iconUrl": "https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=https://pg.com&size=128",
     "lastDayTradedPrice": "156.78",
     "currentPrice": 156.78,
     "dayTimeSeries": [],
@@ -119,7 +119,7 @@
   {
     "symbol": "HD",
     "companyName": "The Home Depot Inc.",
-    "iconUrl": "https://logo.clearbit.com/homedepot.com",
+    "iconUrl": "https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=https://homedepot.com&size=128",
     "lastDayTradedPrice": "342.56",
     "currentPrice": 342.56,
     "dayTimeSeries": [],
@@ -128,7 +128,7 @@
   {
     "symbol": "DIS",
     "companyName": "The Walt Disney Company",
-    "iconUrl": "https://logo.clearbit.com/disney.com",
+    "iconUrl": "https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=https://disney.com&size=128",
     "lastDayTradedPrice": "89.07",
     "currentPrice": 89.07,
     "dayTimeSeries": [],
