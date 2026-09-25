@@ -2,61 +2,48 @@ import User from "../../models/User.js";
 import { StatusCodes } from "http-status-codes";
 import { BadRequestError, UnauthenticatedError } from "../../errors/index.js";
 import { OAuth2Client } from "google-auth-library";
-import jwt from "jsonwebtoken";
-import jwksClient from "jwks-rsa";
 import { sendLoginNotification } from "../../services/fcmService.js";
 
-const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
-
-const jwksClientInstance = jwksClient({
-  jwksUri: "https://appleid.apple.com/auth/keys",
-  timeout: 3000,
-});
-
-async function getKey(kid) {
-  return new Promise((resolve, reject) => {
-    jwksClientInstance.getSigningKey(kid, (err, key) => {
-      if (err) {
-        return reject(err);
-      }
-      const signingKey = key.getPublicKey();
-      resolve(signingKey);
-    });
-  });
-}
+const googleClient = new OAuth2Client();
 
 const signInWithOauth = async (req, res) => {
   const { id_token, provider, fcmToken } = req.body;
-  if (!id_token || !provider || !["google", "apple"].includes(provider)) {
-    throw new BadRequestError("Invalid request");
+  if (!id_token || provider !== "google") {
+    throw new BadRequestError("Invalid request. Provider must be 'google'.");
   }
 
   try {
-    let email, user;
+    const clientId = process.env.GOOGLE_CLIENT_ID;
+    const audiences = [
+      clientId,
+      process.env.GOOGLE_ANDROID_CLIENT_ID,
+    ].filter(Boolean);
 
-    if (provider === "apple") {
-      const { header } = jwt.decode(id_token, { complete: true });
-      const kid = header.kid;
-      const publicKey = await getKey(kid);
-      ({ email } = jwt.verify(id_token, publicKey));
+    const ticket = await googleClient.verifyIdToken({
+      idToken: id_token,
+      audience: audiences.length > 0 ? audiences : undefined,
+    });
+
+    const payload = ticket.getPayload();
+    if (!payload || !payload.email) {
+      throw new UnauthenticatedError("Invalid Google ID token payload");
     }
-    if (provider === "google") {
-      const ticket = await googleClient.verifyToken({
-        idToken: id_token,
-        audience: process.env.GOOGLE_CLIENT_ID,
-      });
-      const payload = ticket.getPayload();
-      email = payload.email;
+
+    const email = payload.email;
+    const updateData = {};
+
+    if (payload.name) {
+      updateData.name = payload.name.trim().slice(0, 50);
     }
-    const updateData = { email_verified: true };
+
     if (fcmToken) {
       updateData.fcmToken = fcmToken;
     }
 
-    user = await User.findOneAndUpdate(
+    const user = await User.findOneAndUpdate(
       { email },
       updateData,
-      { new: true, upsert: true },
+      { new: true, upsert: true, setDefaultsOnInsert: true },
     );
 
     const accessToken = user.createAccessToken();
@@ -73,6 +60,7 @@ const signInWithOauth = async (req, res) => {
 
     if (user.phone_number || user.phone) phone_exist = true;
     if (user.login_pin) login_pin_exist = true;
+
     res.status(StatusCodes.OK).json({
       user: {
         email: user.email,
@@ -84,7 +72,11 @@ const signInWithOauth = async (req, res) => {
       tokens: { access_token: accessToken, refresh_token: refreshToken },
     });
   } catch (error) {
-    throw new UnauthenticatedError("Invalid Oauth token");
+    console.error("[Google OAuth Error]:", error?.message || error);
+    if (error instanceof BadRequestError || error instanceof UnauthenticatedError) {
+      throw error;
+    }
+    throw new UnauthenticatedError("Invalid Google Oauth token");
   }
 };
 

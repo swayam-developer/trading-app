@@ -177,7 +177,7 @@ paths:
         - Authentication
       summary: OAuth authentication
       description: |
-        Authenticates user using OAuth providers (Google, Apple).
+        Authenticates user using Google OAuth for Android.
         Returns access and refresh tokens.
       operationId: oauthLogin
       requestBody:
