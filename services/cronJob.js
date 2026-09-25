@@ -137,38 +137,46 @@ const executePendingAMOOrders = async () => {
 };
 
 const scheduleDayReset = () => {
-  cron.schedule("15 9 * * 1-5", async () => {
-    if (!isDBConnected()) return;
-    if (isNewTradeDay()) {
-      try {
-        await Stock.updateMany({}, [
-          {
-            $set: {
-              dayTimeSeries: [],
-              tenMinTimeSeries: [],
-              lastDayTradedPrice: "$currentPrice",
+  cron.schedule(
+    "15 9 * * 1-5",
+    async () => {
+      if (!isDBConnected()) return;
+      if (isNewTradeDay()) {
+        try {
+          await Stock.updateMany({}, [
+            {
+              $set: {
+                dayTimeSeries: [],
+                tenMinTimeSeries: [],
+                lastDayTradedPrice: "$currentPrice",
+              },
             },
-          },
-          {
-            $set: { __v: 0 },
-          },
-        ]);
-        console.log("Day reset completed at 9:15 AM");
-      } catch (err) {
-        console.error("Error in scheduleDayReset:", err.message);
+            {
+              $set: { __v: 0 },
+            },
+          ]);
+          console.log("Day reset completed at 9:15 AM IST");
+        } catch (err) {
+          console.error("Error in scheduleDayReset:", err.message);
+        }
       }
-    }
-  });
+    },
+    { timezone: "Asia/Kolkata" }
+  );
 };
 
 const scheduleAMORunner = () => {
-  // Execute queued AMOs at 9:30 AM on trading days
-  cron.schedule("30 9 * * 1-5", async () => {
-    if (!isDBConnected()) return;
-    if (isNewTradeDay()) {
-      await executePendingAMOOrders();
-    }
-  });
+  // Execute queued AMOs at 9:30 AM IST on trading days
+  cron.schedule(
+    "30 9 * * 1-5",
+    async () => {
+      if (!isDBConnected()) return;
+      if (isNewTradeDay()) {
+        await executePendingAMOOrders();
+      }
+    },
+    { timezone: "Asia/Kolkata" }
+  );
 };
 
 const update10MinCandle = () => {
